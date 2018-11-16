@@ -4796,7 +4796,7 @@ func TestSchemaMap_Validate(t *testing.T) {
 
 			Err: true,
 			Errors: []error{
-				fmt.Errorf("\"long_gone\": [REMOVED] no longer supported by Cloud API"),
+				NewAttributeError("long_gone", fmt.Errorf("\"long_gone\": [REMOVED] no longer supported by Cloud API")),
 			},
 		},
 
@@ -4832,7 +4832,7 @@ func TestSchemaMap_Validate(t *testing.T) {
 
 			Err: true,
 			Errors: []error{
-				fmt.Errorf("\"blacklist\": conflicts with whitelist"),
+				NewAttributeError("blacklist", fmt.Errorf("\"blacklist\": conflicts with whitelist")),
 			},
 		},
 
@@ -4876,7 +4876,7 @@ func TestSchemaMap_Validate(t *testing.T) {
 
 			Err: true,
 			Errors: []error{
-				fmt.Errorf(`"optional_att": conflicts with required_att`),
+				NewAttributeError("optional_att", fmt.Errorf(`"optional_att": conflicts with required_att`)),
 			},
 		},
 
@@ -4903,8 +4903,8 @@ func TestSchemaMap_Validate(t *testing.T) {
 
 			Err: true,
 			Errors: []error{
-				fmt.Errorf(`"foo_att": conflicts with bar_att`),
-				fmt.Errorf(`"bar_att": conflicts with foo_att`),
+				NewAttributeError("foo_att", fmt.Errorf(`"foo_att": conflicts with bar_att`)),
+				NewAttributeError("bar_att", fmt.Errorf(`"bar_att": conflicts with foo_att`)),
 			},
 		},
 
@@ -4984,7 +4984,7 @@ func TestSchemaMap_Validate(t *testing.T) {
 			},
 			Err: true,
 			Errors: []error{
-				fmt.Errorf(`something is not right here`),
+				NewAttributeError("validate_me", fmt.Errorf(`something is not right here`)),
 			},
 		},
 
@@ -5300,7 +5300,7 @@ func TestSchemaSet_ValidateMaxItems(t *testing.T) {
 			Diff: nil,
 			Err:  true,
 			Errors: []error{
-				fmt.Errorf("aliases: attribute supports 1 item maximum, config has 2 declared"),
+				NewAttributeError("aliases", fmt.Errorf("aliases: attribute supports 1 item maximum, config has 2 declared")),
 			},
 		},
 		"#1": {
@@ -5424,7 +5424,7 @@ func TestSchemaSet_ValidateMinItems(t *testing.T) {
 			Diff: nil,
 			Err:  true,
 			Errors: []error{
-				fmt.Errorf("aliases: attribute supports 2 item as a minimum, config has 1 declared"),
+				NewAttributeError("aliases", fmt.Errorf("aliases: attribute supports 2 item as a minimum, config has 1 declared")),
 			},
 		},
 	}
