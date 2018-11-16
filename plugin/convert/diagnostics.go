@@ -1,6 +1,10 @@
 package convert
 
 import (
+	"strconv"
+	"strings"
+
+	"github.com/hashicorp/terraform/helper/schema"
 	proto "github.com/hashicorp/terraform/internal/tfplugin5"
 	"github.com/hashicorp/terraform/tfdiags"
 	"github.com/zclconf/go-cty/cty"
@@ -24,6 +28,13 @@ func WarnsAndErrsToProto(warns []string, errs []error) (diags []*proto.Diagnosti
 // This panics if d is not a string or error.
 func AppendProtoDiag(diags []*proto.Diagnostic, d interface{}) []*proto.Diagnostic {
 	switch d := d.(type) {
+	case *schema.AttributeError:
+		ap := AddrToAttributePath(d.Addr())
+		diags = append(diags, &proto.Diagnostic{
+			Severity:  proto.Diagnostic_ERROR,
+			Summary:   d.Error(),
+			Attribute: ap,
+		})
 	case cty.PathError:
 		ap := PathToAttributePath(d.Path)
 		diags = append(diags, &proto.Diagnostic{
@@ -128,5 +139,32 @@ func PathToAttributePath(p cty.Path) *proto.AttributePath {
 			}
 		}
 	}
+	return ap
+}
+
+func AddrToAttributePath(addr string) *proto.AttributePath {
+	parts := strings.Split(addr, ".")
+
+	ap := &proto.AttributePath{}
+	for _, part := range parts {
+		idx, err := strconv.Atoi(part)
+		if err == nil {
+			ap.Steps = append(ap.Steps, &proto.AttributePath_Step{
+				Selector: &proto.AttributePath_Step_ElementKeyInt{
+					ElementKeyInt: int64(idx),
+				},
+			})
+			continue
+		}
+
+		// TODO: detect map keys
+
+		ap.Steps = append(ap.Steps, &proto.AttributePath_Step{
+			Selector: &proto.AttributePath_Step_AttributeName{
+				AttributeName: part,
+			},
+		})
+	}
+
 	return ap
 }

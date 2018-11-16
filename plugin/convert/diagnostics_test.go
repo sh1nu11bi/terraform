@@ -357,3 +357,41 @@ func TestDiagnostics(t *testing.T) {
 		})
 	}
 }
+
+func TestPathToAttributePath(t *testing.T) {
+	// TODO
+	t.Skip()
+}
+
+func TestAddrToAttributePath(t *testing.T) {
+	testCases := []struct {
+		Addr                  string
+		ExpectedAttributePath *proto.AttributePath
+	}{
+		{
+			"attribute.0",
+			&proto.AttributePath{
+				Steps: []*proto.AttributePath_Step{
+					{
+						Selector: &proto.AttributePath_Step_AttributeName{
+							AttributeName: "attribute",
+						},
+					},
+					{
+						Selector: &proto.AttributePath_Step_ElementKeyInt{
+							ElementKeyInt: int64(0),
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for i, tc := range testCases {
+		ap := AddrToAttributePath(tc.Addr)
+		if !cmp.Equal(ap, tc.ExpectedAttributePath) {
+			t.Fatalf("%d: Unexpected attribute path.\nExpected:\n%#v\nGiven:\n%#v\n",
+				i, tc.ExpectedAttributePath, ap)
+		}
+	}
+}
