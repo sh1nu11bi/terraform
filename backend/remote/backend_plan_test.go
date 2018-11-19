@@ -284,6 +284,36 @@ func TestRemote_planNoConfig(t *testing.T) {
 	}
 }
 
+func TestRemote_planNoChanges(t *testing.T) {
+	b := testBackendDefault(t)
+
+	op, configCleanup := testOperationApply(t, "./test-fixtures/plan-no-changes")
+	defer configCleanup()
+
+	op.Workspace = backend.DefaultStateName
+
+	run, err := b.Operation(context.Background(), op)
+	if err != nil {
+		t.Fatalf("error starting operation: %v", err)
+	}
+
+	<-run.Done()
+	if run.Result != backend.OperationSuccess {
+		t.Fatalf("operation failed: %s", b.CLI.(*cli.MockUi).ErrorWriter.String())
+	}
+	if !run.PlanEmpty {
+		t.Fatalf("expected plan to be empty")
+	}
+
+	output := b.CLI.(*cli.MockUi).OutputWriter.String()
+	if !strings.Contains(output, "No changes. Infrastructure is up-to-date.") {
+		t.Fatalf("expected no changes in plan summery: %s", output)
+	}
+	if !strings.Contains(output, "Sentinel Result: true") {
+		t.Fatalf("missing policy check result in output: %s", output)
+	}
+}
+
 func TestRemote_planLockTimeout(t *testing.T) {
 	b := testBackendDefault(t)
 	ctx := context.Background()
@@ -459,7 +489,7 @@ func TestRemote_planPolicyPass(t *testing.T) {
 		t.Fatalf("missing plan summery in output: %s", output)
 	}
 	if !strings.Contains(output, "Sentinel Result: true") {
-		t.Fatalf("missing polic check result in output: %s", output)
+		t.Fatalf("missing policy check result in output: %s", output)
 	}
 }
 
