@@ -12,6 +12,7 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure"
+	"github.com/hashicorp/go-azure-helpers/authentication"
 	"github.com/hashicorp/terraform/backend"
 	"github.com/hashicorp/terraform/helper/acctest"
 )
@@ -127,7 +128,7 @@ func setupResources(t *testing.T, keyName string) testResources {
 	}
 
 	t.Logf("creating storage account %s", res.storageAccountName)
-	_, err = clients.storageAccountsClient.Create(ctx, res.resourceGroupName, res.storageAccountName, armStorage.AccountCreateParameters{
+	future, err := clients.storageAccountsClient.Create(ctx, res.resourceGroupName, res.storageAccountName, armStorage.AccountCreateParameters{
 		Sku: &armStorage.Sku{
 			Name: armStorage.StandardLRS,
 			Tier: armStorage.Standard,
@@ -137,6 +138,12 @@ func setupResources(t *testing.T, keyName string) testResources {
 	if err != nil {
 		destroyResources(t, res.resourceGroupName)
 		t.Fatalf("failed to create test storage account: %s", err)
+	}
+
+	err = future.WaitForCompletionRef(ctx, clients.storageAccountsClient.Client)
+	if err != nil {
+		destroyResources(t, res.resourceGroupName)
+		t.Fatalf("failed waiting for the creation of storage account: %s", err)
 	}
 
 	t.Log("fetching access key for storage account")
@@ -187,15 +194,17 @@ func destroyResources(t *testing.T, resourceGroupName string) {
 }
 
 type testClient struct {
-	subscriptionID        string
-	tenantID              string
-	clientID              string
-	clientSecret          string
-	environment           azure.Environment
+	subscriptionID string
+	tenantID       string
+	clientID       string
+	clientSecret   string
+	environment    azure.Environment
+
 	groupsClient          resources.GroupsClient
 	storageAccountsClient armStorage.AccountsClient
 }
 
+// TODO: could we just use an ArmClient here?
 func getTestClient(t *testing.T) testClient {
 	client := testClient{
 		subscriptionID: os.Getenv("ARM_SUBSCRIPTION_ID"),
@@ -208,11 +217,11 @@ func getTestClient(t *testing.T) testClient {
 		t.Fatal("Azure credentials missing or incomplete")
 	}
 
-	env, err := getAzureEnvironment(os.Getenv("ARM_ENVIRONMENT"))
+	env, err := authentication.DetermineEnvironment(os.Getenv("ARM_ENVIRONMENT"))
 	if err != nil {
 		t.Fatalf("Failed to detect Azure environment from ARM_ENVIRONMENT value: %s", os.Getenv("ARM_ENVIRONMENT"))
 	}
-	client.environment = env
+	client.environment = *env
 
 	oauthConfig, err := adal.NewOAuthConfig(env.ActiveDirectoryEndpoint, client.tenantID)
 	if err != nil {

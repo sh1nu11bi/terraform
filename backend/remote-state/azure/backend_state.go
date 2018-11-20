@@ -24,7 +24,8 @@ func (b *Backend) Workspaces() ([]string, error) {
 		Prefix: prefix,
 	}
 
-	container := b.blobClient.GetContainerReference(b.containerName)
+	client := b.armClient.blobClient
+	container := client.GetContainerReference(b.containerName)
 	resp, err := container.ListBlobs(params)
 	if err != nil {
 		return nil, err
@@ -57,7 +58,8 @@ func (b *Backend) DeleteWorkspace(name string) error {
 		return fmt.Errorf("can't delete default state")
 	}
 
-	containerReference := b.blobClient.GetContainerReference(b.containerName)
+	client := b.armClient.blobClient
+	containerReference := client.GetContainerReference(b.containerName)
 	blobReference := containerReference.GetBlobReference(b.path(name))
 	options := &storage.DeleteBlobOptions{}
 
@@ -65,8 +67,10 @@ func (b *Backend) DeleteWorkspace(name string) error {
 }
 
 func (b *Backend) StateMgr(name string) (state.State, error) {
+	blobClient := b.armClient.blobClient
+
 	client := &RemoteClient{
-		blobClient:    b.blobClient,
+		blobClient:    blobClient,
 		containerName: b.containerName,
 		keyName:       b.path(name),
 	}

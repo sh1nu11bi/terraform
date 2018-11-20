@@ -82,12 +82,12 @@ func TestPutMaintainsMetaData(t *testing.T) {
 
 	ctx := context.TODO()
 	config := getBackendConfig(t, res)
-	blobClient, err := getBlobClient(ctx, config)
+	armClient, err := buildArmClient(ctx, config)
 	if err != nil {
-		t.Fatalf("Error getting Blob Client: %+v", err)
+		t.Fatalf("Error getting ARM Client: %+v", err)
 	}
 
-	containerReference := blobClient.GetContainerReference(res.containerName)
+	containerReference := armClient.blobClient.GetContainerReference(res.containerName)
 	blobReference := containerReference.GetBlobReference(keyName)
 
 	err = blobReference.CreateBlockBlob(&storage.PutBlobOptions{})
@@ -110,7 +110,8 @@ func TestPutMaintainsMetaData(t *testing.T) {
 	remoteClient := RemoteClient{
 		keyName:       res.keyName,
 		containerName: res.containerName,
-		blobClient:    blobClient,
+
+		blobClient: armClient.blobClient,
 	}
 
 	bytes := []byte(acctest.RandString(20))

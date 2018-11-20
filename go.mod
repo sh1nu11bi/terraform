@@ -33,6 +33,7 @@ require (
 	github.com/coreos/pkg v0.0.0-20180928190104-399ea9e2e55f // indirect
 	github.com/davecgh/go-spew v1.1.1
 	github.com/dgrijalva/jwt-go v0.0.0-20160617170158-f0777076321a // indirect
+	github.com/dimchansky/utfbom v1.0.0 // indirect
 	github.com/dnaeon/go-vcr v0.0.0-20180920040454-5637cf3d8a31 // indirect
 	github.com/dylanmei/iso8601 v0.1.0 // indirect
 	github.com/dylanmei/winrmtest v0.0.0-20170819153634-c2fbb09e6c08
@@ -54,7 +55,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.5.1 // indirect
 	github.com/hashicorp/consul v0.0.0-20171026175957-610f3c86a089
 	github.com/hashicorp/errwrap v1.0.0
-	github.com/hashicorp/go-azure-helpers v0.0.0-20181120094008-dd1e326c8888 // indirect
+	github.com/hashicorp/go-azure-helpers v0.0.0-20181120094008-dd1e326c8888
 	github.com/hashicorp/go-checkpoint v0.0.0-20171009173528-1545e56e46de
 	github.com/hashicorp/go-cleanhttp v0.5.0
 	github.com/hashicorp/go-getter v0.0.0-20180327010114-90bb99a48d86
