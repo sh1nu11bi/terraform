@@ -95,18 +95,20 @@ type Backend struct {
 	armClient     *ArmClient
 	containerName string
 	keyName       string
-	leaseID       string
 }
 
 type BackendConfig struct {
-	AccessKey          string
-	Environment        string
-	ClientID           string
-	ClientSecret       string
-	ResourceGroupName  string
+	// Required
 	StorageAccountName string
-	SubscriptionID     string
-	TenantID           string
+
+	// Optional
+	AccessKey         string
+	ClientID          string
+	ClientSecret      string
+	Environment       string
+	ResourceGroupName string
+	SubscriptionID    string
+	TenantID          string
 }
 
 func (b *Backend) configure(ctx context.Context) error {
