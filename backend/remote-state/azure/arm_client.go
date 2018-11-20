@@ -34,7 +34,7 @@ func buildArmClient(ctx context.Context, config BackendConfig) (*ArmClient, erro
 
 	// if we have an Access Key - we don't need the other clients
 	if config.AccessKey != "" {
-		storageClient, err := storage.NewClient(config.StorageAccountName, config.AccessKey, env.StorageEndpointSuffix, storage.DefaultAPIVersion, true)
+		storageClient, err := storage.NewBasicClientOnSovereignCloud(config.StorageAccountName, config.AccessKey, *env)
 		if err != nil {
 			return nil, fmt.Errorf("Error creating storage client for storage account %q: %s", config.StorageAccountName, err)
 		}
