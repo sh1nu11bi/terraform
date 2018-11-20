@@ -16,17 +16,24 @@ func TestRemoteClient_impl(t *testing.T) {
 }
 
 func TestRemoteClient(t *testing.T) {
-	testACC(t)
+	testAccAzureBackend(t)
+	rs := acctest.RandString(4)
+	res := testResourceNames(rs, "testState")
+	armClient := buildTestClient(t, res)
 
-	keyName := "testState"
-	res := setupResources(t, keyName)
-	defer destroyResources(t, res.resourceGroupName)
+	ctx := context.TODO()
+	err := armClient.buildTestResources(ctx, &res)
+	if err != nil {
+		armClient.destroyTestResources(ctx, res)
+		t.Fatalf("Error creating Test Resources: %q", err)
+	}
+	defer armClient.destroyTestResources(ctx, res)
 
 	b := backend.TestBackendConfig(t, New(), backend.TestWrapConfig(map[string]interface{}{
 		"storage_account_name": res.storageAccountName,
-		"container_name":       res.containerName,
-		"key":                  keyName,
-		"access_key":           res.accessKey,
+		"container_name":       res.storageContainerName,
+		"key":                  res.storageKeyName,
+		"access_key":           res.storageAccountAccessKey,
 	})).(*Backend)
 
 	state, err := b.StateMgr(backend.DefaultStateName)
@@ -38,24 +45,31 @@ func TestRemoteClient(t *testing.T) {
 }
 
 func TestRemoteClientLocks(t *testing.T) {
-	testACC(t)
+	testAccAzureBackend(t)
+	rs := acctest.RandString(4)
+	res := testResourceNames(rs, "testState")
+	armClient := buildTestClient(t, res)
 
-	keyName := "testState"
-	res := setupResources(t, keyName)
-	defer destroyResources(t, res.resourceGroupName)
+	ctx := context.TODO()
+	err := armClient.buildTestResources(ctx, &res)
+	if err != nil {
+		armClient.destroyTestResources(ctx, res)
+		t.Fatalf("Error creating Test Resources: %q", err)
+	}
+	defer armClient.destroyTestResources(ctx, res)
 
 	b1 := backend.TestBackendConfig(t, New(), backend.TestWrapConfig(map[string]interface{}{
 		"storage_account_name": res.storageAccountName,
-		"container_name":       res.containerName,
-		"key":                  keyName,
-		"access_key":           res.accessKey,
+		"container_name":       res.storageContainerName,
+		"key":                  res.storageKeyName,
+		"access_key":           res.storageAccountAccessKey,
 	})).(*Backend)
 
 	b2 := backend.TestBackendConfig(t, New(), backend.TestWrapConfig(map[string]interface{}{
 		"storage_account_name": res.storageAccountName,
-		"container_name":       res.containerName,
-		"key":                  keyName,
-		"access_key":           res.accessKey,
+		"container_name":       res.storageContainerName,
+		"key":                  res.storageKeyName,
+		"access_key":           res.storageAccountAccessKey,
 	})).(*Backend)
 
 	s1, err := b1.StateMgr(backend.DefaultStateName)
@@ -72,23 +86,24 @@ func TestRemoteClientLocks(t *testing.T) {
 }
 
 func TestPutMaintainsMetaData(t *testing.T) {
-	testACC(t)
-
-	keyName := "testState"
-	headerName := "acceptancetest"
-	expectedValue := "f3b56bad-33ad-4b93-a600-7a66e9cbd1eb"
-	res := setupResources(t, keyName)
-	defer destroyResources(t, res.resourceGroupName)
+	testAccAzureBackend(t)
+	rs := acctest.RandString(4)
+	res := testResourceNames(rs, "testState")
+	armClient := buildTestClient(t, res)
 
 	ctx := context.TODO()
-	config := getBackendConfig(t, res)
-	armClient, err := buildArmClient(ctx, config)
+	err := armClient.buildTestResources(ctx, &res)
 	if err != nil {
-		t.Fatalf("Error getting ARM Client: %+v", err)
+		armClient.destroyTestResources(ctx, res)
+		t.Fatalf("Error creating Test Resources: %q", err)
 	}
+	defer armClient.destroyTestResources(ctx, res)
 
-	containerReference := armClient.blobClient.GetContainerReference(res.containerName)
-	blobReference := containerReference.GetBlobReference(keyName)
+	headerName := "acceptancetest"
+	expectedValue := "f3b56bad-33ad-4b93-a600-7a66e9cbd1eb"
+
+	containerReference := armClient.blobClient.GetContainerReference(res.storageContainerName)
+	blobReference := containerReference.GetBlobReference(res.storageKeyName)
 
 	err = blobReference.CreateBlockBlob(&storage.PutBlobOptions{})
 	if err != nil {
@@ -108,8 +123,8 @@ func TestPutMaintainsMetaData(t *testing.T) {
 
 	// update the metadata using the Backend
 	remoteClient := RemoteClient{
-		keyName:       res.keyName,
-		containerName: res.containerName,
+		keyName:       res.storageKeyName,
+		containerName: res.storageContainerName,
 
 		blobClient: armClient.blobClient,
 	}
@@ -128,19 +143,5 @@ func TestPutMaintainsMetaData(t *testing.T) {
 
 	if blobReference.Metadata[headerName] != expectedValue {
 		t.Fatalf("%q was not set to %q in the MetaData: %+v", headerName, expectedValue, blobReference.Metadata)
-	}
-}
-
-func getBackendConfig(t *testing.T, res testResources) BackendConfig {
-	clients := getTestClient(t)
-	return BackendConfig{
-		ClientID:       clients.clientID,
-		ClientSecret:   clients.clientSecret,
-		Environment:    clients.environment.Name,
-		SubscriptionID: clients.subscriptionID,
-		TenantID:       clients.tenantID,
-
-		ResourceGroupName:  res.resourceGroupName,
-		StorageAccountName: res.storageAccountName,
 	}
 }

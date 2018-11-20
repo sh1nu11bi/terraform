@@ -10,11 +10,13 @@ import (
 	"github.com/Azure/azure-sdk-for-go/storage"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/adal"
+	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/hashicorp/go-azure-helpers/authentication"
 )
 
 type ArmClient struct {
-	blobClient storage.BlobStorageClient
+	blobClient  storage.BlobStorageClient
+	environment azure.Environment
 
 	// These Clients are only initialized if an Access Key isn't provided
 	groupsClient          *resources.GroupsClient
@@ -22,10 +24,12 @@ type ArmClient struct {
 }
 
 func buildArmClient(ctx context.Context, config BackendConfig) (*ArmClient, error) {
-	client := ArmClient{}
 	env, err := authentication.DetermineEnvironment(config.Environment)
 	if err != nil {
 		return nil, err
+	}
+	client := ArmClient{
+		environment: *env,
 	}
 
 	// if we have an Access Key - we don't need the other clients
