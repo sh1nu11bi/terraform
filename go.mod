@@ -2,8 +2,8 @@ module github.com/hashicorp/terraform
 
 require (
 	cloud.google.com/go v0.15.0
-	github.com/Azure/azure-sdk-for-go v10.3.0-beta+incompatible
-	github.com/Azure/go-autorest v8.3.1+incompatible
+	github.com/Azure/azure-sdk-for-go v21.3.0+incompatible
+	github.com/Azure/go-autorest v10.15.4+incompatible
 	github.com/Azure/go-ntlmssp v0.0.0-20170803034930-c92175d54006 // indirect
 	github.com/ChrisTrenkamp/goxpath v0.0.0-20170625215350-4fe035839290 // indirect
 	github.com/Unknwon/com v0.0.0-20151008135407-28b053d5a292 // indirect
@@ -86,6 +86,7 @@ require (
 	github.com/kardianos/osext v0.0.0-20160811001526-c2c54e542fb7
 	github.com/keybase/go-crypto v0.0.0-20161004153544-93f5b35093ba // indirect
 	github.com/lusis/go-artifactory v0.0.0-20160115162124-7e4ce345df82
+	github.com/marstr/guid v1.1.0 // indirect
 	github.com/masterzen/azure-sdk-for-go v0.0.0-20161014135628-ee4f0065d00c // indirect
 	github.com/masterzen/simplexml v0.0.0-20160608183007-4572e39b1ab9 // indirect
 	github.com/masterzen/winrm v0.0.0-20180224160350-7e40f93ae939
