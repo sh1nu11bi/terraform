@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"sort"
 	"sync"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform/config"
 	"github.com/hashicorp/terraform/configs/configschema"
 	"github.com/hashicorp/terraform/terraform"
+	"github.com/kr/pretty"
 )
 
 // Provider represents a resource provider in Terraform, and properly
@@ -237,7 +239,13 @@ func (p *Provider) ValidateResource(
 			"Provider doesn't support resource: %s", t)}
 	}
 
-	return r.Validate(c)
+	warns, errs := r.Validate(c)
+	if len(errs) > 0 {
+		log.Printf("[DEBUG] Provider.ValidateResource validation failed (%s), config: %s",
+			pretty.Sprint(errs), pretty.Sprint(c))
+	}
+
+	return warns, errs
 }
 
 // Configure implementation of terraform.ResourceProvider interface.
@@ -411,7 +419,12 @@ func (p *Provider) ValidateDataSource(
 			"Provider doesn't support data source: %s", t)}
 	}
 
-	return r.Validate(c)
+	warns, errs := r.Validate(c)
+	if len(errs) > 0 {
+		log.Printf("[DEBUG] Provider.ValidateDataSource validation failed (%s), config: %s",
+			pretty.Sprint(errs), pretty.Sprint(c))
+	}
+	return warns, errs
 }
 
 // ReadDataDiff implementation of terraform.ResourceProvider interface.

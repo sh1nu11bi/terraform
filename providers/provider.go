@@ -3,6 +3,7 @@ package providers
 import (
 	"github.com/zclconf/go-cty/cty"
 
+	"github.com/hashicorp/terraform/addrs"
 	"github.com/hashicorp/terraform/configs/configschema"
 	"github.com/hashicorp/terraform/states"
 	"github.com/hashicorp/terraform/tfdiags"
@@ -119,6 +120,8 @@ type ValidateResourceTypeConfigResponse struct {
 type ValidateDataSourceConfigRequest struct {
 	// TypeName is the name of the data source type to validate.
 	TypeName string
+
+	Addr addrs.Resource
 
 	// Config is the configuration value to validate, which may contain unknown
 	// values.

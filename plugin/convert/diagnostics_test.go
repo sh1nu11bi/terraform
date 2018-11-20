@@ -2,6 +2,7 @@ package convert
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -369,12 +370,24 @@ func TestAddrToAttributePath(t *testing.T) {
 		ExpectedAttributePath *proto.AttributePath
 	}{
 		{
-			"attribute.0",
+			"just_attribute",
 			&proto.AttributePath{
 				Steps: []*proto.AttributePath_Step{
 					{
 						Selector: &proto.AttributePath_Step_AttributeName{
-							AttributeName: "attribute",
+							AttributeName: "just_attribute",
+						},
+					},
+				},
+			},
+		},
+		{
+			"list_attribute[0]",
+			&proto.AttributePath{
+				Steps: []*proto.AttributePath_Step{
+					{
+						Selector: &proto.AttributePath_Step_AttributeName{
+							AttributeName: "list_attribute",
 						},
 					},
 					{
@@ -385,13 +398,100 @@ func TestAddrToAttributePath(t *testing.T) {
 				},
 			},
 		},
+		{
+			"list_attribute[99]",
+			&proto.AttributePath{
+				Steps: []*proto.AttributePath_Step{
+					{
+						Selector: &proto.AttributePath_Step_AttributeName{
+							AttributeName: "list_attribute",
+						},
+					},
+					{
+						Selector: &proto.AttributePath_Step_ElementKeyInt{
+							ElementKeyInt: int64(99),
+						},
+					},
+				},
+			},
+		},
+		{
+			`map_attribute["key"]`,
+			&proto.AttributePath{
+				Steps: []*proto.AttributePath_Step{
+					{
+						Selector: &proto.AttributePath_Step_AttributeName{
+							AttributeName: "map_attribute",
+						},
+					},
+					{
+						Selector: &proto.AttributePath_Step_ElementKeyString{
+							ElementKeyString: "key",
+						},
+					},
+				},
+			},
+		},
+		{
+			`double.nested.attribute`,
+			&proto.AttributePath{
+				Steps: []*proto.AttributePath_Step{
+					{
+						Selector: &proto.AttributePath_Step_AttributeName{
+							AttributeName: "map_attribute",
+						},
+					},
+					{
+						Selector: &proto.AttributePath_Step_ElementKeyString{
+							ElementKeyString: "key",
+						},
+					},
+				},
+			},
+		},
+		{
+			`double.nested.attribute.with.num_index[5]`,
+			&proto.AttributePath{
+				Steps: []*proto.AttributePath_Step{
+					{
+						Selector: &proto.AttributePath_Step_AttributeName{
+							AttributeName: "map_attribute",
+						},
+					},
+					{
+						Selector: &proto.AttributePath_Step_ElementKeyString{
+							ElementKeyString: "key",
+						},
+					},
+				},
+			},
+		},
+		{
+			`double.nested.attribute.with_map["something"]`,
+			&proto.AttributePath{
+				Steps: []*proto.AttributePath_Step{
+					{
+						Selector: &proto.AttributePath_Step_AttributeName{
+							AttributeName: "map_attribute",
+						},
+					},
+					{
+						Selector: &proto.AttributePath_Step_ElementKeyString{
+							ElementKeyString: "key",
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for i, tc := range testCases {
-		ap := AddrToAttributePath(tc.Addr)
-		if !cmp.Equal(ap, tc.ExpectedAttributePath) {
-			t.Fatalf("%d: Unexpected attribute path.\nExpected:\n%#v\nGiven:\n%#v\n",
-				i, tc.ExpectedAttributePath, ap)
-		}
+		t.Run(fmt.Sprintf("%d:%s", i, tc.Addr), func(t *testing.T) {
+			ap := AddrToAttributePath(tc.Addr)
+			if !cmp.Equal(ap, tc.ExpectedAttributePath) {
+				t.Fatalf("%d: Unexpected attribute path.\n%s\n",
+					i, cmp.Diff(tc.ExpectedAttributePath, ap))
+			}
+		})
 	}
 }

@@ -3,11 +3,13 @@ package plugin
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 
+	"github.com/kr/pretty"
 	"github.com/zclconf/go-cty/cty"
 	ctyconvert "github.com/zclconf/go-cty/cty/convert"
 	"github.com/zclconf/go-cty/cty/msgpack"
@@ -183,6 +185,7 @@ func (s *GRPCProviderServer) ValidateResourceTypeConfig(_ context.Context, req *
 }
 
 func (s *GRPCProviderServer) ValidateDataSourceConfig(_ context.Context, req *proto.ValidateDataSourceConfig_Request) (*proto.ValidateDataSourceConfig_Response, error) {
+	log.Printf("[DEBUG] GRPCProviderServer.ValidateDataSourceConfig - incoming request: %s", pretty.Sprint(req))
 	resp := &proto.ValidateDataSourceConfig_Response{}
 
 	block := s.getDatasourceSchemaBlock(req.TypeName)
@@ -192,6 +195,7 @@ func (s *GRPCProviderServer) ValidateDataSourceConfig(_ context.Context, req *pr
 		resp.Diagnostics = convert.AppendProtoDiag(resp.Diagnostics, err)
 		return resp, nil
 	}
+	log.Printf("[DEBUG] GRPCProviderServer.ValidateDataSourceConfig - decoded config: %s", pretty.Sprint(configVal))
 
 	config := terraform.NewResourceConfigShimmed(configVal, block)
 

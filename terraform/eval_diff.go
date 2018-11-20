@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/hcl2/hcl"
+	"github.com/kr/pretty"
 	"github.com/zclconf/go-cty/cty"
 
 	"github.com/hashicorp/terraform/addrs"
@@ -176,6 +177,8 @@ func (n *EvalDiff) Eval(ctx EvalContext) (interface{}, error) {
 
 	// The provider gets an opportunity to customize the proposed new value,
 	// which in turn produces the _planned_ new value.
+	log.Printf("[DEBUG] EvalDiff - Calling provider (%T) PlanResourceChange", provider)
+	log.Printf("[DEBUG] EvalDiff - provider.PlanResourceChange - Config: %s", pretty.Sprint(configVal))
 	resp := provider.PlanResourceChange(providers.PlanResourceChangeRequest{
 		TypeName:         n.Addr.Resource.Type,
 		Config:           configVal,

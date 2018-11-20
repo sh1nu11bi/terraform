@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/terraform/plugin/convert"
 	"github.com/hashicorp/terraform/providers"
 	"github.com/hashicorp/terraform/version"
+	"github.com/kr/pretty"
 	"github.com/zclconf/go-cty/cty/msgpack"
 	"google.golang.org/grpc"
 )
@@ -230,7 +231,10 @@ func (p *GRPCProvider) ValidateDataSourceConfig(r providers.ValidateDataSourceCo
 		resp.Diagnostics = resp.Diagnostics.Append(err)
 		return resp
 	}
-	resp.Diagnostics = resp.Diagnostics.Append(convert.ProtoToDiagnostics(protoResp.Diagnostics))
+	diags := convert.ProtoToDiagnostics(protoResp.Diagnostics)
+	log.Printf("[DEBUG] GRPCProvider.ValidateDataSourceConfig received diags in response: %s", pretty.Sprint(diags))
+	// diags = convert.AddAddrToDiagnostics(r.Addr, diags)
+	resp.Diagnostics = resp.Diagnostics.Append(diags)
 	return resp
 }
 

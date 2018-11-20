@@ -27,6 +27,12 @@ type contextualFromConfigBody interface {
 	ElaborateFromConfigBody(hcl.Body) Diagnostic
 }
 
+// InConfig returns a copy of the receiver with any config-contextual
+// diagnostics elaborated in the context of the given body.
+func (d Diagnostics) WithAddress(addr string) Diagnostics {
+	return d
+}
+
 // InConfigBody returns a copy of the receiver with any config-contextual
 // diagnostics elaborated in the context of the given body.
 func (d Diagnostics) InConfigBody(body hcl.Body) Diagnostics {

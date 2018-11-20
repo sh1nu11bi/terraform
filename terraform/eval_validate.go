@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform/providers"
 	"github.com/hashicorp/terraform/provisioners"
 	"github.com/hashicorp/terraform/tfdiags"
+	"github.com/kr/pretty"
 	"github.com/zclconf/go-cty/cty"
 	"github.com/zclconf/go-cty/cty/convert"
 	"github.com/zclconf/go-cty/cty/gocty"
@@ -422,11 +423,15 @@ func (n *EvalValidateResource) Eval(ctx EvalContext) (interface{}, error) {
 
 		req := providers.ValidateDataSourceConfigRequest{
 			TypeName: cfg.Type,
+			Addr:     cfg.Addr(),
 			Config:   configVal,
 		}
 
+		log.Printf("[DEBUG] EvalValidateResource - Calling provider (%T) ValidateDataSourceConfig", provider)
+		log.Printf("[DEBUG] EvalValidateResource - provider.ValidateDataSourceConfig - CFG: %s", pretty.Sprint(cfg))
 		resp := provider.ValidateDataSourceConfig(req)
-		diags = diags.Append(resp.Diagnostics.InConfigBody(cfg.Config))
+		log.Printf("[DEBUG] provider.ValidateDataSourceConfig -> diags: %s", pretty.Sprint(resp.Diagnostics))
+		diags = diags.Append(resp.Diagnostics.InConfigBody(cfg.Config).WithAddress(cfg.Addr().String()))
 	}
 
 	if n.IgnoreWarnings {
