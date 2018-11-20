@@ -4,17 +4,16 @@ import (
 	"context"
 	"fmt"
 
-	armStorage "github.com/Azure/azure-sdk-for-go/arm/storage"
+	armStorage "github.com/Azure/azure-sdk-for-go/services/storage/mgmt/2017-10-01/storage"
 	"github.com/Azure/azure-sdk-for-go/storage"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure"
-
 	"github.com/hashicorp/terraform/backend"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
-// New creates a new backend for S3 remote state.
+// New creates a new backend for Azure remote state.
 func New() backend.Backend {
 	s := &schema.Backend{
 		Schema: map[string]*schema.Schema{
@@ -135,7 +134,7 @@ func (b *Backend) configure(ctx context.Context) error {
 		TenantID:           data.Get("arm_tenant_id").(string),
 	}
 
-	blobClient, err := getBlobClient(config)
+	blobClient, err := getBlobClient(ctx, config)
 	if err != nil {
 		return err
 	}
@@ -144,7 +143,7 @@ func (b *Backend) configure(ctx context.Context) error {
 	return nil
 }
 
-func getBlobClient(config BackendConfig) (storage.BlobStorageClient, error) {
+func getBlobClient(ctx context.Context, config BackendConfig) (storage.BlobStorageClient, error) {
 	var client storage.BlobStorageClient
 
 	env, err := getAzureEnvironment(config.Environment)
@@ -152,7 +151,7 @@ func getBlobClient(config BackendConfig) (storage.BlobStorageClient, error) {
 		return client, err
 	}
 
-	accessKey, err := getAccessKey(config, env)
+	accessKey, err := getAccessKey(ctx, config, env)
 	if err != nil {
 		return client, err
 	}
@@ -167,7 +166,7 @@ func getBlobClient(config BackendConfig) (storage.BlobStorageClient, error) {
 	return client, nil
 }
 
-func getAccessKey(config BackendConfig, env azure.Environment) (string, error) {
+func getAccessKey(ctx context.Context, config BackendConfig, env azure.Environment) (string, error) {
 	if config.AccessKey != "" {
 		return config.AccessKey, nil
 	}
@@ -194,7 +193,7 @@ func getAccessKey(config BackendConfig, env azure.Environment) (string, error) {
 	accountsClient := armStorage.NewAccountsClientWithBaseURI(env.ResourceManagerEndpoint, config.SubscriptionID)
 	accountsClient.Authorizer = autorest.NewBearerAuthorizer(spt)
 
-	keys, err := accountsClient.ListKeys(config.ResourceGroupName, config.StorageAccountName)
+	keys, err := accountsClient.ListKeys(ctx, config.ResourceGroupName, config.StorageAccountName)
 	if err != nil {
 		return "", fmt.Errorf("Error retrieving keys for storage account %q: %s", config.StorageAccountName, err)
 	}

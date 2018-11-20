@@ -1,6 +1,7 @@
 package azure
 
 import (
+	"context"
 	"testing"
 
 	"github.com/Azure/azure-sdk-for-go/storage"
@@ -79,8 +80,9 @@ func TestPutMaintainsMetaData(t *testing.T) {
 	res := setupResources(t, keyName)
 	defer destroyResources(t, res.resourceGroupName)
 
+	ctx := context.TODO()
 	config := getBackendConfig(t, res)
-	blobClient, err := getBlobClient(config)
+	blobClient, err := getBlobClient(ctx, config)
 	if err != nil {
 		t.Fatalf("Error getting Blob Client: %+v", err)
 	}

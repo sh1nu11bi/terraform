@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/storage"
-
 	"github.com/hashicorp/terraform/backend"
 	"github.com/hashicorp/terraform/state"
 	"github.com/hashicorp/terraform/state/remote"

@@ -1,12 +1,13 @@
 package azure
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"testing"
 
-	"github.com/Azure/azure-sdk-for-go/arm/resources/resources"
-	armStorage "github.com/Azure/azure-sdk-for-go/arm/storage"
+	"github.com/Azure/azure-sdk-for-go/profiles/2017-03-09/resources/mgmt/resources"
+	armStorage "github.com/Azure/azure-sdk-for-go/services/storage/mgmt/2017-10-01/storage"
 	"github.com/Azure/azure-sdk-for-go/storage"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/adal"
@@ -117,28 +118,29 @@ func setupResources(t *testing.T, keyName string) testResources {
 		location = "westus"
 	}
 
+	ctx := context.TODO()
+
 	t.Logf("creating resource group %s", res.resourceGroupName)
-	_, err := clients.groupsClient.CreateOrUpdate(res.resourceGroupName, resources.Group{Location: &location})
+	_, err := clients.groupsClient.CreateOrUpdate(ctx, res.resourceGroupName, resources.Group{Location: &location})
 	if err != nil {
 		t.Fatalf("failed to create test resource group: %s", err)
 	}
 
 	t.Logf("creating storage account %s", res.storageAccountName)
-	_, createError := clients.storageAccountsClient.Create(res.resourceGroupName, res.storageAccountName, armStorage.AccountCreateParameters{
+	_, err = clients.storageAccountsClient.Create(ctx, res.resourceGroupName, res.storageAccountName, armStorage.AccountCreateParameters{
 		Sku: &armStorage.Sku{
 			Name: armStorage.StandardLRS,
 			Tier: armStorage.Standard,
 		},
 		Location: &location,
-	}, make(chan struct{}))
-	createErr := <-createError
-	if createErr != nil {
+	})
+	if err != nil {
 		destroyResources(t, res.resourceGroupName)
 		t.Fatalf("failed to create test storage account: %s", err)
 	}
 
 	t.Log("fetching access key for storage account")
-	resp, err := clients.storageAccountsClient.ListKeys(res.resourceGroupName, res.storageAccountName)
+	resp, err := clients.storageAccountsClient.ListKeys(ctx, res.resourceGroupName, res.storageAccountName)
 	if err != nil {
 		destroyResources(t, res.resourceGroupName)
 		t.Fatalf("failed to list storage account keys %s:", err)
@@ -174,8 +176,8 @@ func destroyResources(t *testing.T, resourceGroupName string) {
 	t.Log("destroying created resources")
 
 	// destroying is simple as deleting the resource group will destroy everything else
-	_, deleteErr := clients.groupsClient.Delete(resourceGroupName, make(chan struct{}))
-	err := <-deleteErr
+	ctx := context.TODO()
+	_, err := clients.groupsClient.Delete(ctx, resourceGroupName)
 	if err != nil {
 		t.Logf(warning, err)
 		return
