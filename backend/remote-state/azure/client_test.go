@@ -102,7 +102,11 @@ func TestPutMaintainsMetaData(t *testing.T) {
 	headerName := "acceptancetest"
 	expectedValue := "f3b56bad-33ad-4b93-a600-7a66e9cbd1eb"
 
-	containerReference := armClient.blobClient.GetContainerReference(res.storageContainerName)
+	client, err := armClient.getBlobClient(ctx)
+	if err != nil {
+		t.Fatalf("Error building Blob Client: %+v", err)
+	}
+	containerReference := client.GetContainerReference(res.storageContainerName)
 	blobReference := containerReference.GetBlobReference(res.storageKeyName)
 
 	err = blobReference.CreateBlockBlob(&storage.PutBlobOptions{})
@@ -126,7 +130,7 @@ func TestPutMaintainsMetaData(t *testing.T) {
 		keyName:       res.storageKeyName,
 		containerName: res.storageContainerName,
 
-		blobClient: armClient.blobClient,
+		blobClient: *client,
 	}
 
 	bytes := []byte(acctest.RandString(20))

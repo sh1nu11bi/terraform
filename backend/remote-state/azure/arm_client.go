@@ -15,12 +15,14 @@ import (
 )
 
 type ArmClient struct {
-	blobClient  storage.BlobStorageClient
-	environment azure.Environment
-
 	// These Clients are only initialized if an Access Key isn't provided
 	groupsClient          *resources.GroupsClient
 	storageAccountsClient *armStorage.AccountsClient
+
+	accessKey          string
+	environment        azure.Environment
+	resourceGroupName  string
+	storageAccountName string
 }
 
 func buildArmClient(ctx context.Context, config BackendConfig) (*ArmClient, error) {
@@ -29,16 +31,14 @@ func buildArmClient(ctx context.Context, config BackendConfig) (*ArmClient, erro
 		return nil, err
 	}
 	client := ArmClient{
-		environment: *env,
+		environment:        *env,
+		resourceGroupName:  config.ResourceGroupName,
+		storageAccountName: config.StorageAccountName,
 	}
 
 	// if we have an Access Key - we don't need the other clients
 	if config.AccessKey != "" {
-		storageClient, err := storage.NewBasicClientOnSovereignCloud(config.StorageAccountName, config.AccessKey, *env)
-		if err != nil {
-			return nil, fmt.Errorf("Error creating storage client for storage account %q: %s", config.StorageAccountName, err)
-		}
-		client.blobClient = storageClient.GetBlobService()
+		client.accessKey = config.AccessKey
 		return &client, nil
 	}
 
@@ -76,17 +76,36 @@ func buildArmClient(ctx context.Context, config BackendConfig) (*ArmClient, erro
 	client.configureClient(&groupsClient.Client, auth)
 	client.groupsClient = &groupsClient
 
-	accessKey, err := client.getAccessKey(ctx, config.ResourceGroupName, config.StorageAccountName)
-	if err != nil {
-		return nil, err
+	return &client, nil
+}
+
+func (c ArmClient) getBlobClient(ctx context.Context) (*storage.BlobStorageClient, error) {
+	if c.accessKey != "" {
+		storageClient, err := storage.NewBasicClientOnSovereignCloud(c.storageAccountName, c.accessKey, c.environment)
+		if err != nil {
+			return nil, fmt.Errorf("Error creating storage client for storage account %q: %s", c.storageAccountName, err)
+		}
+		client := storageClient.GetBlobService()
+		return &client, nil
 	}
 
-	storageClient, err := storage.NewBasicClientOnSovereignCloud(config.StorageAccountName, *accessKey, *env)
+	keys, err := c.storageAccountsClient.ListKeys(ctx, c.resourceGroupName, c.storageAccountName)
 	if err != nil {
-		return nil, fmt.Errorf("Error creating storage client for storage account %q: %s", config.StorageAccountName, err)
+		return nil, fmt.Errorf("Error retrieving keys for Storage Account %q: %s", c.storageAccountName, err)
 	}
-	client.blobClient = storageClient.GetBlobService()
 
+	if keys.Keys == nil {
+		return nil, fmt.Errorf("Nil key returned for storage account %q", c.storageAccountName)
+	}
+
+	accessKeys := *keys.Keys
+	accessKey := accessKeys[0].Value
+
+	storageClient, err := storage.NewBasicClientOnSovereignCloud(c.storageAccountName, *accessKey, c.environment)
+	if err != nil {
+		return nil, fmt.Errorf("Error creating storage client for storage account %q: %s", c.storageAccountName, err)
+	}
+	client := storageClient.GetBlobService()
 	return &client, nil
 }
 
@@ -97,18 +116,4 @@ func (c *ArmClient) configureClient(client *autorest.Client, auth autorest.Autho
 	client.Sender = buildSender()
 	client.SkipResourceProviderRegistration = false
 	client.PollingDuration = 60 * time.Minute
-}
-
-func (b *ArmClient) getAccessKey(ctx context.Context, resourceGroup, accountName string) (*string, error) {
-	keys, err := b.storageAccountsClient.ListKeys(ctx, resourceGroup, accountName)
-	if err != nil {
-		return nil, fmt.Errorf("Error retrieving keys for Storage Account %q: %s", accountName, err)
-	}
-
-	if keys.Keys == nil {
-		return nil, fmt.Errorf("Nil key returned for storage account %q", accountName)
-	}
-
-	accessKeys := *keys.Keys
-	return accessKeys[0].Value, nil
 }

@@ -1,6 +1,7 @@
 package azure
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strings"
@@ -24,7 +25,11 @@ func (b *Backend) Workspaces() ([]string, error) {
 		Prefix: prefix,
 	}
 
-	client := b.armClient.blobClient
+	ctx := context.Background()
+	client, err := b.armClient.getBlobClient(ctx)
+	if err != nil {
+		return nil, err
+	}
 	container := client.GetContainerReference(b.containerName)
 	resp, err := container.ListBlobs(params)
 	if err != nil {
@@ -58,7 +63,12 @@ func (b *Backend) DeleteWorkspace(name string) error {
 		return fmt.Errorf("can't delete default state")
 	}
 
-	client := b.armClient.blobClient
+	ctx := context.Background()
+	client, err := b.armClient.getBlobClient(ctx)
+	if err != nil {
+		return err
+	}
+
 	containerReference := client.GetContainerReference(b.containerName)
 	blobReference := containerReference.GetBlobReference(b.path(name))
 	options := &storage.DeleteBlobOptions{}
@@ -67,10 +77,14 @@ func (b *Backend) DeleteWorkspace(name string) error {
 }
 
 func (b *Backend) StateMgr(name string) (state.State, error) {
-	blobClient := b.armClient.blobClient
+	ctx := context.Background()
+	blobClient, err := b.armClient.getBlobClient(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	client := &RemoteClient{
-		blobClient:    blobClient,
+		blobClient:    *blobClient,
 		containerName: b.containerName,
 		keyName:       b.path(name),
 	}
