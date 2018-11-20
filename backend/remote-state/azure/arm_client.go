@@ -94,8 +94,7 @@ func (c *ArmClient) configureClient(client *autorest.Client, auth autorest.Autho
 	// TODO: fixme
 	//setUserAgent(client)
 	client.Authorizer = auth
-	//client.RequestInspector = azure.WithClientID(clientRequestID())
-	//client.Sender = azure.BuildSender()
+	client.Sender = buildSender()
 	client.SkipResourceProviderRegistration = false
 	client.PollingDuration = 60 * time.Minute
 }
